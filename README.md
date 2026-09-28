@@ -1,21 +1,41 @@
-# TMF_forum_BackEnd
+# TMF Forum Backend
 
-A tool in the telecom domain that converts API requests and responses to a TMF compliant API.
+A C++ backend for mapping customer JSON data to the fields defined by a TM Forum API schema. It lets a user inspect an API operation, upload customer data, configure field mappings and defaults, and generate JSON using the selected TMF field names.
 
-The service is a C++ application built with CMake. It listens on port 1001 and uses the existing MongoDB database `TMF_FORUM_POC` on `localhost:27017`. Endpoints, request and response shapes, and collection layouts are unchanged.
+The application prepares JSON; it does not send the generated request to a live TMF API.
 
-## Build
+## What it does
 
-Requires CMake 3.20+, a C++17 compiler, and Git (CMake downloads nlohmann/json, cpp-httplib, and mongo-c-driver).
+- Downloads and stores a TMF API schema from a URL supplied by an admin.
+- Extracts the schema’s API titles, paths, HTTP methods, parameters, and response definitions.
+- Stores customer JSON data in MongoDB.
+- Lets users map customer fields to TMF fields and set default values.
+- Uses saved search criteria and mappings to generate a JSON response.
+- Provides a separate workflow for assembling request JSON from selected user fields and required parameters.
 
-```
+## How it works
+
+1. **Import a schema.** An admin submits a schema URL. The backend downloads the JSON and stores it in MongoDB.
+2. **Prepare the API choices.** reads the stored schemas and saves their paths, methods, request parameters, and response definitions in separate collections.
+3. **Choose an operation.** The frontend can request available titles, paths, methods, status codes, and fields. The selected operation is stored.
+4. **Upload customer data.** stores JSON records under a chosen table name.
+5. **Configure the mapping.** The user selects which customer fields supply TMF fields, adds defaults, and saves lookup conditions.
+6. **Generate JSON. Finds matching customer records, copies mapped values into TMF-named fields, fills configured defaults, and returns the JSON object.
+
+
+
+## Requirements
+
+- CMake 3.20 or newer
+- A C++17 compiler
+- Git, used by CMake to fetch dependencies
+- MongoDB running at `localhost:27017`
+
+The application uses the `TMF_FORUM_POC` MongoDB database. Its CMake build fetches `nlohmann/json`, `cpp-httplib`, and `mongo-c-driver`.
+
+## Build and test
+
+```bash
 cmake -S . -B build
 cmake --build build --config Release
 ctest --test-dir build -C Release
-```
-
-The server binary is `build/Release/tmf_forum_backend` (or `build/tmf_forum_backend` with a single-config generator).
-
-## Run
-
-Start MongoDB locally, then run `tmf_forum_backend`. The process listens on port 1001.
